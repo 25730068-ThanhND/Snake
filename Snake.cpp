@@ -1,12 +1,14 @@
 #include <iostream>
 #include <cstdlib>
+#include <ctime>
 #include <ncurses.h>
-#include <unistd.h>   // usleep
+#include <unistd.h>
 using namespace std;
+
 #define MINX 2
 #define MINY 2
-#define MAXX 35
-#define MAXY 20
+#define MAXX 50
+#define MAXY 22
 
 void gotoxy(int column, int line);
 void VeKhung();
@@ -17,33 +19,30 @@ struct Point {
 
 class CONRAN {
 public:
-    Point A[100];
+    Point A[200];
     int DoDai;
+    int Score;
 
     CONRAN() {
         DoDai = 3;
-        A[0].x = 10; A[0].y = 10;
-        A[1].x = 11; A[1].y = 10;
-        A[2].x = 12; A[2].y = 10;
+        Score = 0;
+        A[0] = {10, 10};
+        A[1] = {11, 10};
+        A[2] = {12, 10};
     }
 
-    void Ve() {
+    void Ve(Point Qua) {
+        // Vẽ rắn
         for (int i = 0; i < DoDai; i++) {
             gotoxy(A[i].x, A[i].y);
             printw("X");
         }
+        // Vẽ quả
+        gotoxy(Qua.x, Qua.y);
+        printw("*");
     }
-    
-    void Ve(Point Qua){
-    for (int i = 0; i < DoDai; i++){
-        gotoxy(A[i].x, A[i].y);
-        cout<<"X";
 
-    }
-    gotoxy(Qua.x, Qua.y); cout<<"*";
-}
-
-    void DiChuyen(int Huong) {
+    bool DiChuyen(int Huong, Point& Qua) {
         for (int i = DoDai - 1; i > 0; i--)
             A[i] = A[i - 1];
 
@@ -51,38 +50,43 @@ public:
         if (Huong == 1) A[0].y++;
         if (Huong == 2) A[0].x--;
         if (Huong == 3) A[0].y--;
-    }
-    
-    void DiChuyen(int Huong, Point& Qua){
-    for (int i = DoDai-1; i>0; i--)
-        A[i] = A[i-1];
 
-    if (Huong==0) A[0].x = A[0].x + 1;
-    if (Huong==1) A[0].y = A[0].y + 1;
-    if (Huong==2) A[0].x = A[0].x - 1;
-    if (Huong==3) A[0].y = A[0].y - 1;
+        // ❌ Nếu chạm tường → GAME OVER
+        if (A[0].x <= MINX || A[0].x >= MAXX ||
+            A[0].y <= MINY || A[0].y >= MAXY) {
+            return false;
+        }
 
-    if ((A[0].x == Qua.x) && (A[0].y == Qua.y)){
-        DoDai++;
-        Qua.x = rand()%(MAXX-MINX)+MINX;
-        Qua.y = rand()%(MAXY-MINY)+MINY;
+        // ✔ Nếu ăn quả
+        if (A[0].x == Qua.x && A[0].y == Qua.y) {
+            DoDai++;
+            Score++;
+
+            Qua.x = rand() % (MAXX - MINX - 2) + MINX + 1;
+            Qua.y = rand() % (MAXY - MINY - 2) + MINY + 1;
+        }
+
+        return true;
     }
-}
 };
 
 int main() {
-    initscr();          // bật ncurses
-    noecho();           // không hiện ký tự nhập
-    curs_set(0);        // ẩn con trỏ
+    initscr();
+    noecho();
+    curs_set(0);
     keypad(stdscr, TRUE);
-    nodelay(stdscr, TRUE); // getch() không chờ
+    nodelay(stdscr, TRUE);
 
     CONRAN r;
     int Huong = 0;
+    Point Qua;
 
-    while (1) {
-        int t = getch();     // lấy phím không chặn
+    srand(time(0));
+    Qua.x = rand() % (MAXX - MINX - 2) + MINX + 1;
+    Qua.y = rand() % (MAXY - MINY - 2) + MINY + 1;
 
+    while (true) {
+        int t = getch();
         if (t != ERR) {
             if (t == 'a') Huong = 2;
             if (t == 'w') Huong = 3;
@@ -90,31 +94,48 @@ int main() {
             if (t == 's' || t == 'x') Huong = 1;
         }
 
-        clear();             // thay cho system("cls")
+        clear();
         VeKhung();
-        r.Ve();
-        r.DiChuyen(Huong);
+
+        // Hiển thị điểm
+        gotoxy(2, 0);
+        printw("Score: %d", r.Score);
+
+        // Di chuyển + kiểm tra thua
+        if (!r.DiChuyen(Huong, Qua)) {
+            gotoxy(20, MAXY + 2);
+            printw("GAME OVER! Your score: %d", r.Score);
+            refresh();
+            usleep(2000000);
+            break;
+        }
+
+        r.Ve(Qua);
 
         refresh();
-        usleep(300000);      // Sleep(300)
+        usleep(150000);
     }
 
-    endwin(); // tắt ncurses
+    endwin();
     return 0;
 }
 
-// GOTOXY kiểu Linux
 void gotoxy(int column, int line) {
-    move(line, column);   // (y, x)
+    move(line, column);
 }
 
 void VeKhung() {
-    for (int i = MINX; i <= MAXX; i++) {
-        for (int j = MINY; j <= MAXY; j++) {
-            if ((i == MINX) || (i == MAXX) || (j == MINY) || (j == MAXY)) {
-                gotoxy(i, j);
-                printf("+");
-            }
-        }
+    for (int x = MINX; x <= MAXX; x++) {
+        gotoxy(x, MINY);
+        printw("#");
+        gotoxy(x, MAXY);
+        printw("#");
+    }
+
+    for (int y = MINY; y <= MAXY; y++) {
+        gotoxy(MINX, y);
+        printw("#");
+        gotoxy(MAXX, y);
+        printw("#");
     }
 }
