@@ -9,6 +9,7 @@ using namespace std;
 #define MAXY 20
 
 void gotoxy(int column, int line);
+void VeKhung();
 
 struct Point {
     int x, y;
@@ -90,6 +91,7 @@ int main() {
         }
 
         clear();             // thay cho system("cls")
+        VeKhung();
         r.Ve();
         r.DiChuyen(Huong);
 
@@ -104,4 +106,15 @@ int main() {
 // GOTOXY kiểu Linux
 void gotoxy(int column, int line) {
     move(line, column);   // (y, x)
+}
+
+void VeKhung() {
+    for (int i = MINX; i <= MAXX; i++) {
+        for (int j = MINY; j <= MAXY; j++) {
+            if ((i == MINX) || (i == MAXX) || (j == MINY) || (j == MAXY)) {
+                gotoxy(i, j);
+                printf("+");
+            }
+        }
+    }
 }
