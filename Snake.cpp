@@ -139,3 +139,4 @@ void VeKhung() {
         printw("#");
     }
 }
+
