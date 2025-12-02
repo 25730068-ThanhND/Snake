@@ -105,3 +105,4 @@ int main() {
 void gotoxy(int column, int line) {
     move(line, column);   // (y, x)
 }
+
